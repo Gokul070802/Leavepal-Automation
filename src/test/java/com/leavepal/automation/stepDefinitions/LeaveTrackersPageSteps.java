@@ -26,6 +26,12 @@ public class LeaveTrackersPageSteps {
         leaveTrackerPage.uploadMedicalCertificate(filePath);
     }
 
+    @And("Fill in the leave application details with leaveType {string}, fromDate {string}, toDate {string}, reason {string}")
+    public void fillInTheLeaveApplicationDetailsWithoutAttachment(String leaveType, String fromDate, String toDate,
+            String reason) {
+        leaveTrackerPage.fillLeaveApplication(leaveType, fromDate, toDate, reason);
+    }
+
     @And("Click on the Apply button")
     public void clickOnTheApplyButton() {
         leaveTrackerPage.clickApplyButton();
@@ -35,5 +41,16 @@ public class LeaveTrackersPageSteps {
     public void theLeaveApplicationShouldBeSubmittedSuccessfully() {
         Assert.assertTrue(leaveTrackerPage.getToastMessage().contains("Leave applied successfully"),
                 "Toast message not found or unexpected");
+    }
+
+    @Then("The loss of pay generator should be displayed")
+    public void theLossOfPayGeneratorShouldBeDisplayed() {
+        Assert.assertTrue(leaveTrackerPage.isLeaveSplitPromptDisplayed(),
+                "Loss of pay generator prompt was not displayed.");
+    }
+
+    @And("Confirm the loss of pay generator")
+    public void confirmTheLossOfPayGenerator() {
+        leaveTrackerPage.clickLeaveSplitOkButton();
     }
 }

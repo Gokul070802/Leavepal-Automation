@@ -1,7 +1,9 @@
 package com.leavepal.automation.pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
@@ -20,6 +22,8 @@ public class LeaveTrackerPage extends BaseClass {
     private final By applyButton = By.id("apply-leave-button-apply-3");
     private final By cancelButton = By.id("apply-leave-button-cancel-2");
     private final By toastMessage = By.id("leavepal-toast-stack");
+    private final By leaveSplitOkButton = By.id("leaveSplitOkBtn");
+    private final By leaveSplitCancelButton = By.id("leaveSplitCancelBtn");
 
     // Methods
 
@@ -30,6 +34,29 @@ public class LeaveTrackerPage extends BaseClass {
     public void selectLeaveType(String leaveType) {
         Select leaveTypeMenu = new Select(getDriver().findElement(leaveTypeDropdown));
         leaveTypeMenu.selectByValue(leaveType);
+    }
+
+    public String getSelectedLeaveType() {
+        Select leaveTypeMenu = new Select(
+                getWait().until(ExpectedConditions.visibilityOfElementLocated(leaveTypeDropdown)));
+        return leaveTypeMenu.getFirstSelectedOption().getAttribute("value");
+    }
+
+    public boolean isLeaveSplitPromptDisplayed() {
+        return getWait().until(ExpectedConditions.visibilityOfElementLocated(leaveSplitOkButton)).isDisplayed()
+                && getWait().until(ExpectedConditions.visibilityOfElementLocated(leaveSplitCancelButton)).isDisplayed();
+    }
+
+    public void clickLeaveSplitOkButton() {
+        getWait().until(ExpectedConditions.elementToBeClickable(leaveSplitOkButton)).click();
+        // Wait for the split prompt to close so it doesn't block Apply button click.
+        try {
+            getWait().until(ExpectedConditions.invisibilityOfElementLocated(leaveSplitOkButton));
+        } catch (TimeoutException ignored) {
+            // UI may keep the element in DOM briefly; continue with Apply wait/click
+            // safeguards.
+        }
+        getWait().until(ExpectedConditions.elementToBeClickable(applyButton));
     }
 
     public void enterFromDate(String fromDate) {
@@ -55,6 +82,13 @@ public class LeaveTrackerPage extends BaseClass {
         getDriver().findElement(reasonInput).sendKeys(reason);
     }
 
+    public void fillLeaveApplication(String leaveType, String fromDate, String toDate, String reason) {
+        selectLeaveType(leaveType);
+        enterFromDate(fromDate);
+        enterToDate(toDate);
+        enterReason(reason);
+    }
+
     public void uploadMedicalCertificate(String filePath) {
         if (filePath == null || filePath.isBlank()) {
             throw new IllegalArgumentException("filePath must be provided");
@@ -71,7 +105,13 @@ public class LeaveTrackerPage extends BaseClass {
     }
 
     public void clickApplyButton() {
-        getWait().until(ExpectedConditions.elementToBeClickable(applyButton)).click();
+        WebElement apply = getWait().until(ExpectedConditions.elementToBeClickable(applyButton));
+        try {
+            apply.click();
+        } catch (ElementClickInterceptedException ex) {
+            // Fallback for transient overlays/animations.
+            ((JavascriptExecutor) getDriver()).executeScript("arguments[0].click();", apply);
+        }
     }
 
     public void clickCancelButton() {
