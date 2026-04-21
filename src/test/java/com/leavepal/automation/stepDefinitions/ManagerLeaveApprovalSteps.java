@@ -1,12 +1,12 @@
 package com.leavepal.automation.stepDefinitions;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.testng.Assert;
 
 import com.leavepal.automation.base.BaseClass;
 import com.leavepal.automation.pages.LeaveRequestsPage;
 import com.leavepal.automation.pages.LoginPage;
+import com.leavepal.automation.utils.PageLocators;
 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -27,12 +27,14 @@ public class ManagerLeaveApprovalSteps extends BaseClass {
         loginPage.enterUsername(username);
         loginPage.enterPassword(password);
         loginPage.clickLoginButton();
-        getWait().until(ExpectedConditions.visibilityOfElementLocated(By.linkText("Leave Requests")));
+        getWait().until(
+                ExpectedConditions.visibilityOfElementLocated(PageLocators.ManagerDashboard.LEAVE_REQUESTS_LINK));
     }
 
     @When("Navigate to the Leave Requests section")
     public void navigateToTheLeaveRequestsSection() {
-        getWait().until(ExpectedConditions.elementToBeClickable(By.linkText("Leave Requests"))).click();
+        getWait().until(ExpectedConditions.elementToBeClickable(PageLocators.ManagerDashboard.LEAVE_REQUESTS_LINK))
+                .click();
         leaveRequestsPage.waitForLeaveRequestsTable();
     }
 
@@ -45,29 +47,31 @@ public class ManagerLeaveApprovalSteps extends BaseClass {
     public void approveTheLeaveApplicationForEmployee(String employeeIdentifier) {
         approvedEmployeeIdentifier = employeeIdentifier;
         leaveRequestsPage.clickApproveForEmployee(employeeIdentifier);
-        By confirmApproveButton = By.cssSelector("#approveModal:not(.hidden) button.primary-btn");
-        getWait().until(ExpectedConditions.elementToBeClickable(confirmApproveButton)).click();
+        leaveRequestsPage.confirmApprove();
     }
 
     @And("Approve the leave application for employee {string} with reason {string}")
     public void approveTheLeaveApplicationForEmployeeWithReason(String employeeIdentifier, String reason) {
         approvedEmployeeIdentifier = employeeIdentifier;
         leaveRequestsPage.clickApproveForEmployee(employeeIdentifier);
-        By approvalCommentField = By.cssSelector("#approveModal:not(.hidden) #approvalComment");
-        By confirmApproveButton = By.cssSelector("#approveModal:not(.hidden) button.primary-btn");
-        getWait().until(ExpectedConditions.visibilityOfElementLocated(approvalCommentField)).sendKeys(reason);
-        getWait().until(ExpectedConditions.elementToBeClickable(confirmApproveButton)).click();
+        leaveRequestsPage.confirmApproveWithComment(reason);
     }
 
     @Then("The leave application should be approved successfully")
     public void theLeaveApplicationShouldBeApprovedSuccessfully() {
+        // ML4: "Leave request approved successfully."
         String toast = leaveRequestsPage.getToastMessage();
-        Assert.assertTrue(toast.toLowerCase().contains("approved") || toast.toLowerCase().contains("success"),
-                "Expected approval success message, but got: " + toast);
+        Assert.assertTrue(toast.toLowerCase().contains("leave request approved successfully"),
+                "Expected ML4 toast 'Leave request approved successfully.', but got: " + toast);
 
         Assert.assertNotNull(approvedEmployeeIdentifier,
                 "No employee identifier captured from approval step.");
+
+        leaveRequestsPage.selectStatusFilter("APPROVED");
         String status = getWait().until(driver -> {
+            if (!leaveRequestsPage.isLeaveRequestShownForEmployee(approvedEmployeeIdentifier)) {
+                return null;
+            }
             String currentStatus = leaveRequestsPage.getStatusForEmployee(approvedEmployeeIdentifier);
             return "Approved".equalsIgnoreCase(currentStatus) ? currentStatus : null;
         });
@@ -79,21 +83,24 @@ public class ManagerLeaveApprovalSteps extends BaseClass {
     public void rejectTheLeaveApplicationForEmployee(String employeeIdentifier, String reason) {
         rejectedEmployeeIdentifier = employeeIdentifier;
         leaveRequestsPage.clickRejectForEmployee(employeeIdentifier);
-        By rejectionReasonField = By.cssSelector("#rejectModal:not(.hidden) #rejectionReason");
-        By confirmRejectButton = By.cssSelector("#rejectModal:not(.hidden) button.danger-btn");
-        getWait().until(ExpectedConditions.visibilityOfElementLocated(rejectionReasonField)).sendKeys(reason);
-        getWait().until(ExpectedConditions.elementToBeClickable(confirmRejectButton)).click();
+        leaveRequestsPage.confirmReject(reason);
     }
 
     @Then("The leave application should be rejected successfully")
     public void theLeaveApplicationShouldBeRejectedSuccessfully() {
+        // ML5: "Leave request rejected successfully."
         String toast = leaveRequestsPage.getToastMessage();
-        Assert.assertTrue(toast.toLowerCase().contains("rejected") || toast.toLowerCase().contains("success"),
-                "Expected rejection success message, but got: " + toast);
+        Assert.assertTrue(toast.toLowerCase().contains("leave request rejected successfully"),
+                "Expected ML5 toast 'Leave request rejected successfully.', but got: " + toast);
 
         Assert.assertNotNull(rejectedEmployeeIdentifier,
                 "No employee identifier captured from rejection step.");
+
+        leaveRequestsPage.selectStatusFilter("REJECTED");
         String status = getWait().until(driver -> {
+            if (!leaveRequestsPage.isLeaveRequestShownForEmployee(rejectedEmployeeIdentifier)) {
+                return null;
+            }
             String currentStatus = leaveRequestsPage.getStatusForEmployee(rejectedEmployeeIdentifier);
             return "Rejected".equalsIgnoreCase(currentStatus) ? currentStatus : null;
         });
@@ -109,8 +116,17 @@ public class ManagerLeaveApprovalSteps extends BaseClass {
 
     @Then("The sick leave attachment should open in a new tab")
     public void theSickLeaveAttachmentShouldOpenInANewTab() {
-        Assert.assertTrue(leaveRequestsPage.waitForNewTabToOpen(windowCountBeforeAttachmentView),
-                "Attachment preview tab did not open.");
+        // Guard: if ML7 popup-blocked toast appears, fail with a clear message
+        // ML7: "Popup blocked. Please allow popups for preview."
+        boolean newTabOpened = leaveRequestsPage.waitForNewTabToOpen(windowCountBeforeAttachmentView);
+        if (!newTabOpened) {
+            String toast = leaveRequestsPage.getToastMessageIfPresent(3);
+            if (toast != null && toast.toLowerCase().contains("popup blocked")) {
+                Assert.fail("ML7: Browser blocked the PDF preview popup. " +
+                        "Ensure '--disable-popup-blocking' is set in Chrome options. Toast: " + toast);
+            }
+        }
+        Assert.assertTrue(newTabOpened, "Attachment preview tab did not open.");
         leaveRequestsPage.closeNewTabAndSwitchBack();
     }
 

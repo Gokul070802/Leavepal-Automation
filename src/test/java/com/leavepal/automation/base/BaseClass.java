@@ -2,9 +2,13 @@ package com.leavepal.automation.base;
 
 import java.time.Duration;
 
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import com.leavepal.automation.utils.PageLocators;
 
 public class BaseClass {
     private static final ThreadLocal<ChromeDriver> DRIVER = new ThreadLocal<>();
@@ -41,5 +45,28 @@ public class BaseClass {
     public static void removeDriver() {
         WAIT.remove();
         DRIVER.remove();
+    }
+
+    /**
+     * Waits up to 10 seconds for the app-wide toast notification and returns its
+     * text.
+     */
+    public String getToastMessage() {
+        return getWait().until(ExpectedConditions.visibilityOfElementLocated(PageLocators.TOAST_MESSAGE))
+                .getText().trim();
+    }
+
+    /**
+     * Returns the toast text if it appears within {@code timeoutSeconds}, or
+     * {@code null} if it does not.
+     */
+    public String getToastMessageIfPresent(int timeoutSeconds) {
+        try {
+            WebDriverWait shortWait = new WebDriverWait(getDriver(), Duration.ofSeconds(timeoutSeconds));
+            return shortWait.until(ExpectedConditions.visibilityOfElementLocated(PageLocators.TOAST_MESSAGE))
+                    .getText().trim();
+        } catch (TimeoutException e) {
+            return null;
+        }
     }
 }

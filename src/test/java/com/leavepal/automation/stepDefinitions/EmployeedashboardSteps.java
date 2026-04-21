@@ -1,9 +1,5 @@
 package com.leavepal.automation.stepDefinitions;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-
-import com.leavepal.automation.base.BaseClass;
 import com.leavepal.automation.pages.EmployeedashboardPage;
 import com.leavepal.automation.pages.LeaveTrackerPage;
 import com.leavepal.automation.pages.LoginPage;
@@ -21,8 +17,7 @@ public class EmployeedashboardSteps {
         loginPage.enterUsername(username);
         loginPage.enterPassword(password);
         loginPage.clickLoginButton();
-        BaseClass.getWait().until(ExpectedConditions.visibilityOfElementLocated(
-                By.linkText("Leave Tracker")));
+        employeedashboardPage.waitForDashboard();
     }
 
     @When("Navigate to the Leave Tracker section")

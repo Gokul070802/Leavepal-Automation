@@ -1,22 +1,29 @@
 package com.leavepal.automation.pages;
 
-import org.openqa.selenium.By;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import com.leavepal.automation.base.BaseClass;
+import com.leavepal.automation.utils.PageLocators;
 
 public class EmployeedashboardPage extends BaseClass {
-    // Locators
-    private final By leaveTrackerLink = By.linkText("Leave Tracker");
 
-    // Methods
     public boolean isEmployeeDashboardDisplayed() {
-        String title = getDriver().getTitle();
-        return title.contains("Employee Dashboard - LeavePal");
+        return getDriver().getTitle().contains("Employee Dashboard - LeavePal");
     }
 
-    // Method to navigate to Leave Tracker page
+    public void waitForDashboard() {
+        getWait().until(
+                ExpectedConditions.visibilityOfElementLocated(PageLocators.EmployeeDashboard.LEAVE_TRACKER_LINK));
+    }
+
     public LeaveTrackerPage navigateToLeaveTracker() {
-        getDriver().findElement(leaveTrackerLink).click();
+        getDriver().findElement(PageLocators.EmployeeDashboard.LEAVE_TRACKER_LINK).click();
         return new LeaveTrackerPage();
+    }
+
+    public EditProfilePage navigateToEditProfile() {
+        getDriver().findElement(PageLocators.EmployeeDashboard.EMPLOYEE_DETAILS_LINK).click();
+        getDriver().findElement(PageLocators.EmployeeDashboard.EDIT_DETAILS_BUTTON).click();
+        return new EditProfilePage();
     }
 }

@@ -51,7 +51,7 @@ public class Hooksimplementation extends BaseClass {
         downloadBehavior.put("eventsEnabled", true);
         getDriver().executeCdpCommand("Page.setDownloadBehavior", downloadBehavior);
 
-        getDriver().get("https://leave-management-app-460701269805.asia-south1.run.app/index.html");
+        getDriver().get(ConfigReader.getRequiredProperty("app.url"));
         getDriver().manage().window().maximize();
     }
 

@@ -1,0 +1,13 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="LeavePal Ordered Feature Suite" verbose="1" parallel="false">
+    <test name="Ordered Features">
+        <classes>
+            <class name="com.leavepal.automation.runners.LoginFeatureRunner" />
+            <class name="com.leavepal.automation.runners.CreateEmployeeFeatureRunner" />
+            <class name="com.leavepal.automation.runners.EditProfileFeatureRunner" />
+            <class name="com.leavepal.automation.runners.ApplyLeaveFeatureRunner" />
+            <class name="com.leavepal.automation.runners.AdminEmployeeManagementFeatureRunner" />
+            <class name="com.leavepal.automation.runners.ForgetPasswordFeatureRunner" />
+        </classes>
+    </test>
+</suite>

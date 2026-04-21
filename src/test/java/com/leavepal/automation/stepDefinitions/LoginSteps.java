@@ -4,6 +4,7 @@ import static org.testng.Assert.assertTrue;
 
 import com.leavepal.automation.base.BaseClass;
 import com.leavepal.automation.pages.LoginPage;
+import com.leavepal.automation.utils.PageLocators;
 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -25,7 +26,13 @@ public class LoginSteps extends BaseClass {
 
     @When("Enter the username as {string}")
     public void enterUsername(String username) {
-        loginPage.enterUsername(username);
+        // Some scenarios reuse this step on the forgot-password page where only the
+        // email field exists.
+        if (!getDriver().findElements(PageLocators.Login.USERNAME_FIELD).isEmpty()) {
+            loginPage.enterUsername(username);
+        } else {
+            loginPage.enterEmailInForgotPassword(username);
+        }
     }
 
     @And("Enter the password as {string}")
